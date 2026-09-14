@@ -11,10 +11,24 @@ Cách chạy:
 
 import re
 
+import os
+
 import pandas as pd
 import streamlit as st
 
 from agent import ask
+
+# ============================================================
+# DEBUG TẠM THỜI — kiểm tra xem GOOGLE_API_KEY có được load đúng không.
+# XÓA đoạn này sau khi đã xác định xong nguyên nhân lỗi 401.
+# ============================================================
+_debug_key = os.getenv("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY", "")
+st.caption(
+    f"🔧 Debug: key length = {len(_debug_key)}, "
+    f"starts_with_AIza = {_debug_key.startswith('AIza') if _debug_key else 'N/A'}, "
+    f"preview = {_debug_key[:6]}...{_debug_key[-4:] if len(_debug_key) > 10 else ''}"
+)
+# ============================================================
 
 # Ép khối hiển thị code (câu SQL) tự động xuống dòng thay vì tràn ngang phải kéo thanh cuộn
 st.markdown(
