@@ -28,21 +28,41 @@ from schema_introspection import get_schema_description
 # ============================================================
 load_dotenv()  # đọc file .env
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+def _get_config_value(key: str, default: str | None = None) -> str | None:
+    """
+    Đọc 1 giá trị cấu hình, ưu tiên biến môi trường (os.getenv) trước.
+    Nếu không có (ví dụ do Streamlit Cloud chưa expose Secrets ra env),
+    thử đọc trực tiếp từ st.secrets khi đang chạy trong môi trường Streamlit.
+    """
+    value = os.getenv(key)
+    if value:
+        return value
+
+    try:
+        import streamlit as st
+        if key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+
+    return default
+
+
+GOOGLE_API_KEY = _get_config_value("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
-    raise ValueError("Chưa tìm thấy GOOGLE_API_KEY trong file .env")
+    raise ValueError("Chưa tìm thấy GOOGLE_API_KEY trong file .env hoặc Streamlit Secrets")
 
 client = genai.Client(api_key=GOOGLE_API_KEY)
 
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-    "database": os.getenv("DB_NAME", "bi_agent_demo"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD"),
+    "host": _get_config_value("DB_HOST", "localhost"),
+    "port": _get_config_value("DB_PORT", "5432"),
+    "database": _get_config_value("DB_NAME", "bi_agent_demo"),
+    "user": _get_config_value("DB_USER", "postgres"),
+    "password": _get_config_value("DB_PASSWORD"),
 }
 if not DB_CONFIG["password"]:
-    raise ValueError("Chưa tìm thấy DB_PASSWORD trong file .env")
+    raise ValueError("Chưa tìm thấy DB_PASSWORD trong file .env hoặc Streamlit Secrets")
 
 MODEL_NAME = "gemini-3.6-flash"  # model miễn phí, nhẹ, ít bị quá tải hơn bản mới nhất
 # Nếu model này báo lỗi "not found", chạy thử:
